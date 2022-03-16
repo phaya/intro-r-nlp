@@ -1,0 +1,8 @@
+"0","reviews_tf_idf %>%"
+"0","  group_by(company) %>%"
+"0","  slice_max(tf_idf, n = 15) %>%"
+"0","  ungroup() %>%"
+"0","  ggplot(aes(tf_idf, fct_reorder(word, tf_idf), fill = company)) +"
+"0","  geom_col(show.legend = FALSE) +"
+"0","  facet_wrap(~company, ncol = 2, scales = ""free"") +"
+"0","  labs(x = ""tf-idf"", y = NULL)"

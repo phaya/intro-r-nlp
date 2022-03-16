@@ -1,0 +1,272 @@
+---
+title: "Formato tidy para texto"
+subtitle: "HR Analytics: Teoría y Práctica"
+author: "http://pablohaya.com/contact"
+date: "01/2022"
+output:
+  beamer_presentation: default
+  ioslides_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(here)
+library(tidyverse)
+library(tidytext)
+```
+
+## Instalación
+
+El código ha sido probado en `r R.version.string`
+
+Es preciso instalar los siguientes paquetes:
+
+* `install.packages("tidyverse")`
+* `install.packages("tidytext")`
+* `install.packages("textdata")`
+* `install.packages("here")`
+* `install.packages("reshape2")`
+
+## Referencias
+
+Estas transparencias han tomado como referencia el libro de texto de **Text Mining with R** de Julia Sigle y David Robinson:
+
+* https://www.tidytextmining.com
+
+El conjunto de datos original ha sido extraído de:
+
+* https://www.kaggle.com/saqlainrehan/employeesreviews-dataset 
+
+
+## El formato tidy
+
+El formato *tidy* es una manera de representar datos tabulados bastante cómoda para realizar análisis de datos. Este formato lo describe Hadley Wickham en detalle en [Tidy Data, 2014](https://www.jstatsoft.org/article/view/v059i10). 
+
+En resumen, una tabla en formato `*tidy* cumple:
+
+* Cada variable es una columna
+* Cada observación es una fila (ej. un empleado)
+* Cada tipo de observación es una tabla (ej. una tabla para los datos de empleado, y otra para sus comentarios)
+
+---
+
+P: ¿Cómo codificamos un texto en formato *tidy*?
+
+R: En una tabla donde cada fila almacena un *token*
+
+Un *token* es la unidad mínima con sentido que vamos a analizar. Normalmente se corresponde con una palabra, aunque podríamos definir *tokens* que agrupen más de una palabra (ej. n-gramas), u otra unidad de análisis como oraciones o párrafos.
+
+El proceso de dividir un texto en *tokens* se llama *tokenización*.
+
+---
+
+Tomemos una revisión del archivo de datos.
+
+```{r, echo = TRUE}
+text <- c('A company culture that encourages dissent, discourse, transparency, and fairness.',
+          'Strong compensation, from benefits, to perks, to base pay.',
+          'Decent internal mobility opportunities.',
+          'Employees are proud to work on globally impactful products, leading.'
+          )
+text
+```
+
+---
+
+Convertimos el vector `text` en un *data frame* donde cada fila es una oración. 
+
+```{r, echo = TRUE}
+text_df <- tibble(line = 1:4, text = text)
+
+text_df
+```
+
+---
+
+La función que realiza la tokenización es [`unnest_tokens()`](https://rdrr.io/pkg/tidytext/man/unnest_tokens.html)
+
+```{r, echo = TRUE}
+text_df %>%
+  unnest_tokens(word, text)
+```
+
+---
+
+`unnest_tokens()` tiene dos argumentos obligatorios. 
+
+1. Nombre de la columna que se va a crear para almacenar los `tokens`.
+2. Nombre de la columna del data frame original que contiene el texto (`text` en el ejemplo)
+
+Nótese que:
+
+* Cualquier otra columna que tuviera el *data frame* se mantiene. En el ejemplo la columna `line`
+* Los signos de puntuación han sido eliminados (ej. `dissent,`)
+* Los `tokens` se convierten por defecto a minúsculas. Para deshabilitar esta opción tendríamos que añadir el parámetro `to_lower = FALSE`)
+  
+---
+
+El parámetro `token` permite cambiar la unidad de tokenización (`word`, `sentence`, `ngram`...). Por defecto es `word`. 
+
+```{r, echo = TRUE}
+text_df %>%
+  unnest_tokens(ngram, text, token="ngrams", n=2)
+```
+
+## Primeros análisis
+
+Vamos a realizar un ejemplo más sofistacado partiendo de un `dataset` que contiene 10 000 revisiones aleatorias extraídas del conjunto de datos original.
+
+Leemos las revisiones de la columna `summary`
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+reviews <- read_csv(here("data/employee_reviews_10000.csv"))
+
+head(reviews$summary)
+```
+
+---
+
+y las tokenizamos:
+
+```{r, eval=FALSE, echo = TRUE}
+tidy_reviews <- reviews %>% 
+  select(summary) %>%
+  unnest_tokens(word, summary)
+
+tidy_reviews
+```
+```{r, echo = FALSE}
+tidy_reviews <- reviews %>% 
+  select(summary) %>%
+  unnest_tokens(word, summary)
+
+print(tidy_reviews, n=5)
+```
+
+obteniendo `r dim(tidy_reviews)[1]` *tokens*
+
+---
+
+¿Qué *tokens* se utilizan más frecuentemente?
+
+```{r, echo = TRUE}
+tidy_reviews %>%
+  count(word, sort = TRUE) 
+```
+
+---
+
+En algunos análisis es preciso limpiar este listado de palabras frecuentemente usadas (*stop words*). `tidyverse` incluye un listado proveniente de tres lexicones distintos.
+
+```{r eval=FALSE, echo=TRUE}
+data(stop_words)
+
+stop_words
+```
+
+```{r, echo = FALSE}
+data(stop_words)
+
+print(stop_words, n=6)
+```
+
+---
+
+Eliminar estas palabras de nuestros datos en formato *tidy* es muy sencillo.
+
+```{r,  eval=FALSE, echo = TRUE}
+tidy_reviews <- tidy_reviews %>%
+  anti_join(stop_words)
+
+tidy_reviews
+```
+```{r, echo = FALSE}
+tidy_reviews <- tidy_reviews %>%
+  anti_join(stop_words)
+
+print(tidy_reviews, n=6)
+```
+
+---
+
+Se han reducido a `r  dim(tidy_reviews)[1]` *tokens*, y han desaparecido las `stop words` de los *tokens* que aparecen más frecuentemente
+
+```{r, echo = TRUE}
+tidy_reviews %>%
+  count(word, sort = TRUE) 
+```
+
+---
+
+Es posible emplear uno solo de los lexicones ya que emplear los tres puede eliminar demasiadas palabras que dependiendo del tipo de texto puede ser útiles.
+
+El siguiente código elimina las palabras frecuentes (`stopwords`) del lexicon `snowball`
+
+```{r, eval=FALSE, echo = TRUE}
+data(stop_words)
+
+stop_words_snowball <- stop_words %>%
+                       filter(lexicon == "snowball")
+
+tidy_reviews <- reviews %>% 
+                select(summary) %>%
+                unnest_tokens(word, summary) %>%
+                anti_join(stop_words_snowball)
+
+tidy_reviews
+```
+
+---
+
+```{r, echo = FALSE}
+data(stop_words)
+
+stop_words_snowball <- stop_words %>%
+                       filter(lexicon == "snowball")
+
+tidy_reviews <- reviews %>% 
+                select(summary) %>%
+                unnest_tokens(word, summary) %>%
+                anti_join(stop_words_snowball)
+
+print(tidy_reviews, n=10)
+```
+
+---
+
+Este nuevo filtrado vemos que es menos *agresivo* (ej. vuelve a aparecer `great`):
+
+```{r, echo = TRUE}
+tidy_reviews %>%
+  count(word, sort = TRUE) 
+```
+
+---
+
+Para terminar como estos primeros análisis básicos visualizamos las frecuencia de palabra en una gráfica:
+
+```{r, eval=FALSE, echo = TRUE}
+tidy_reviews %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 10) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+    geom_col() +
+    labs(y = NULL)
+```
+
+--- 
+
+```{r, echo = FALSE}
+tidy_reviews %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 300) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+    geom_col() +
+    labs(y = NULL)
+```
+
+## A practicar
+
+**Ejercicio**: Crear un archivo con una lista de palabras prohibidas propia (ej. 10). Emplear este archivo para realizar el filtrado.

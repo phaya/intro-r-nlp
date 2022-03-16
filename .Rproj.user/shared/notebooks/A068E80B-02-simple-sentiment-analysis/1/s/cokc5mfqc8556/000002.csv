@@ -1,0 +1,17 @@
+"0","reviews <- read_csv(here(""data/employee_reviews_10000.csv""))"
+"1","[1mRows: [22m[34m10000[39m [1mColumns: [22m[34m17[39m
+"
+"1","[36m--[39m [1mColumn specification[22m [36m------------------------------------------------------------------------------------[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m (14): company, location, dates, job-title, summary, pros, cons, advice-to-mgmt, work-balance-stars, ...
+[32mdbl[39m  (3): ...1, overall-ratings, helpful-count
+"
+"1","
+[36mi[39m Use [38;5;235m[48;5;253m[38;5;235m[48;5;253m`spec()`[48;5;253m[38;5;235m[49m[39m to retrieve the full column specification for this data.
+[36mi[39m Specify the column types or set [38;5;235m[48;5;253m[38;5;235m[48;5;253m`show_col_types = FALSE`[48;5;253m[38;5;235m[49m[39m to quiet this message.
+"
+"0","tidy_reviews <- reviews %>% "
+"0","  select(summary) %>% "
+"0","  unnest_tokens(word, summary)"
+"0",""
+"0","tidy_reviews"

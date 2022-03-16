@@ -1,0 +1,43 @@
+"0","reviews <- read_delim(here(""data/employee_reviews_short.csv""), delim = "";"")"
+"2","New names:
+* `` -> ...1
+"
+"1","[1mRows: [22m[34m1000[39m [1mColumns: [22m[34m17[39m
+"
+"1","[36m--[39m [1mColumn specification[22m [36m-------------------------------------------------------------------------[39m
+[1mDelimiter:[22m "";""
+[31mchr[39m (14): company, location, dates, job-title, summary, pros, cons, advice-to-mgmt, work-bala...
+[32mdbl[39m  (3): ...1, overall-ratings, helpful-count
+"
+"1","
+[36mi[39m Use [38;5;235m[48;5;253m[38;5;235m[48;5;253m`spec()`[48;5;253m[38;5;235m[49m[39m to retrieve the full column specification for this data.
+[36mi[39m Specify the column types or set [38;5;235m[48;5;253m[38;5;235m[48;5;253m`show_col_types = FALSE`[48;5;253m[38;5;235m[49m[39m to quiet this message.
+"
+"0","head(reviews$summary)"
+"1","[1]"
+"1"," ""Best Company to work for""                                                "
+"1","
+"
+"1","[2]"
+"1"," ""Moving at the speed of light, burn out is inevitable""                    "
+"1","
+"
+"1","[3]"
+"1"," ""Great balance between big-company security and fun, fast-moving projects"""
+"1","
+"
+"1","[4]"
+"1"," ""The best place I've worked and also the most demanding.""                 "
+"1","
+"
+"1","[5]"
+"1"," ""Unique, one of a kind dream job""                                         "
+"1","
+"
+"1","[6]"
+"1"," ""NICE working in GOOGLE as an INTERN""                                     "
+"1","
+"
+"0","```"
+"2","Error: attempt to use zero-length variable name
+"

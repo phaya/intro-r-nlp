@@ -1,0 +1,7 @@
+"0","data(stop_words)"
+"0",""
+"0","tidy_reviews <- tidy_reviews %>%"
+"0","  anti_join(stop_words)"
+"1","Joining, by = ""word""
+"
+"0","tidy_reviews"

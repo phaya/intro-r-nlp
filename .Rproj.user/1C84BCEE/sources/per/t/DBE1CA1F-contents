@@ -1,0 +1,107 @@
+---
+title: "Formato tidy para texto"
+subtitle: "HR Analytics: Teoría y Práctica"
+author: "http://pablohaya.com/contact"
+date: "01/2022"
+output:
+  beamer_presentation: default
+  ioslides_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Instalación
+
+El código ha sido probado en `r R.version`
+
+Es preciso instalar los siguientes paquetes.
+
+* `install.packages("tidyverse")`
+* `install.packages("tidytext")`
+* `install.packages("here")`
+
+## Referencias
+
+
+* Libro de texto online: https://www.tidytextmining.com
+* Conjunto de datos original: https://www.kaggle.com/saqlainrehan/employeesreviews-dataset 
+
+
+## El formato tidy
+
+El formato `tidy` es una manera de representar datos tabulados bastante cómoda para realizar análisis. Este formato lo describe Hadley Wickham en detalle en "Tidy Data, 2014"[https://www.jstatsoft.org/article/view/v059i10]. 
+
+En resumen, un tabla en formato `tidy` cumple:
+
+* Cada variable es una columna
+* Cada observación es una fila (ej. un empleado)
+* Cada tipo de observación es una tabla (ej. una tabla para los datos de empleado, y otra para sus comentarios)
+
+---
+
+P: ¿cómo codificamos un texto en formato `tidy`?
+
+R: En una tabla donde cada fila almacena un `token`
+
+Un `token` es la unidad mínima con sentido que vamos a analizar. Normalmente se corresponde con una palabra, aunque podríamos definir `tokens` que agrupen más de una palabra (ej. n-gramas), u otra unidad de análisis como oraciones o párrafos.
+
+El proceso de dividir un texto en `tokens` se llama `tokenización`.
+
+---
+
+Tomemos una revisión del archivo de datos.
+
+```{r, echo = TRUE}
+text <- c('A company culture that encourages dissent, discourse, transparency, and fairness.',
+          'Strong compensation, from benefits, to perks, to base pay.',
+          'Decent internal mobility opportunities.',
+          'Employees are proud to work on globally impactful products, leading.'
+          )
+text
+```
+---
+
+Convertimos el vector `text` en un `data frame` donde cada fila es una oración. 
+
+```{r, echo = TRUE}
+library(dplyr)
+text_df <- tibble(line = 1:4, text = text)
+
+text_df
+```
+
+---
+
+La función que realiza la tokenización es `unnest_tokens()`  ("documentación"[https://rdrr.io/pkg/tidytext/man/unnest_tokens.html])
+
+```{r, echo = TRUE}
+library(tidytext)
+
+text_df %>%
+  unnest_tokens(word, text)
+```
+---
+
+`unnest_tokens()` tiene dos argumentos obligatorios. 
+
+1. Nombre de la columna que se va a crear para almacenar los `tokens`.
+2. Nombre de la columna del data frame original que contiene el texto (`text` en el ejemplo)
+
+Nótese que:
+
+* Cualquier otra columna que tuviera el data frame se mantiene. En el ejemplo la columna `line`
+* Los signos de puntuación han sido eliminados (ej, dissent,)
+* Los tokens se convierten por defecto a minúsculas. Para deshabilitar esta opción tendríamos que añadir el parámetro `to_lower = FALSE`)
+  
+---
+
+El parámetro `token` permite cambiar la unidad de la unidad de tokenización (`word`, `sentence`, `ngram`...). Por defecto es `word. 
+
+```{r, echo = TRUE}
+text_df %>%
+  unnest_tokens(ngram, text, token="ngrams", n=2)
+```
+
+---

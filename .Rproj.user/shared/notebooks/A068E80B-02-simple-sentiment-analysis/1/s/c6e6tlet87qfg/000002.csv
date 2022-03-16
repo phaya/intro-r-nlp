@@ -1,0 +1,4 @@
+"0","custom_stop_words <- bind_rows(tibble(word = c(""company""),  "
+"0","                                      lexicon = c(""propio"")), "
+"0","                               stop_words)"
+"0","custom_stop_words"

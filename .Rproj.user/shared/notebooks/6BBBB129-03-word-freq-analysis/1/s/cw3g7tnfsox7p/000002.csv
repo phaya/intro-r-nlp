@@ -1,0 +1,3 @@
+"0","reviews_tf_idf %>%"
+"0","  select(-total) %>%"
+"0","  arrange(desc(tf_idf))"

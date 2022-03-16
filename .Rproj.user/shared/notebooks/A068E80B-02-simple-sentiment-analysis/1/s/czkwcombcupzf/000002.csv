@@ -1,0 +1,5 @@
+"0","tidy_reviews %>%"
+"0","  inner_join(nrc_joy) %>%"
+"0","  count(word, sort = TRUE)"
+"1","Joining, by = ""word""
+"

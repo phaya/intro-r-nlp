@@ -1,0 +1,5 @@
+"0","tidy_reviews <- reviews %>% "
+"0","  select(summary) %>%"
+"0","  unnest_tokens(word, summary)"
+"0",""
+"0","tidy_reviews"

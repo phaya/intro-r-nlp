@@ -1,0 +1,8 @@
+"0","library(wordcloud)"
+"0",""
+"0","tidy_reviews %>%"
+"0","  anti_join(stop_words) %>%"
+"0","  count(word) %>%"
+"0","  with(wordcloud(word, n, max.words = 100))"
+"1","Joining, by = ""word""
+"

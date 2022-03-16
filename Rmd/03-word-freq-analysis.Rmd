@@ -1,0 +1,259 @@
+---
+title: "Análisis de frecuencias de palabras"
+subtitle: "HR Analytics: Teoría y Práctica"
+author: "http://pablohaya.com/contact"
+date: "01/2022"
+output:
+  beamer_presentation: default
+  ioslides_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(here)
+library(tidyverse)
+library(tidytext)
+library(forcats)
+```
+
+## Introducción
+
+Pregunta: ¿Cómo podemos extraer la temática de un documento?
+
+Una aproximación básica pero bastante efectiva es fijarse en las palabras más frecuentes. El problema es que muchas de estas palabras son frecuentes porque son comunes. 
+
+Se pueden utilizar lista de *stop words* para eliminarlas, pero ya hemos visto que dependiendo del texto algunas veces una palabra te interesa quitarla y otras veces no.
+
+---
+
+Una aproximación clásica que da buenos resultados es **tf-idf** (*term frequency - inverse document frecuency).
+
+Se computa la frecuencia de términos (*tf*) y se ajusta para según la frecuencia de aparición en los distintos documentos (**idf**). De esta manera, la puntuación más alta la obtienen palabras con eleveda frecuencia que aparecen en pocos documentos.
+
+Las palabras frecuentes que aparecen en muchos documentos se ven penalizadas.
+
+## Análisis de frecuencia
+
+Leemos de nuevo el *dataset*, y tokenizamos la columna `summary`
+
+```{r eval=FALSE, echo=TRUE, message=FALSE}
+reviews <- read_csv(here("data/employee_reviews_10000.csv"))
+
+tidy_reviews <- reviews %>% 
+  select(company, summary) %>% 
+  unnest_tokens(word, summary)
+
+tidy_reviews
+```
+
+---
+
+```{r echo=FALSE, message=FALSE}
+reviews <- read_csv(here("data/employee_reviews_10000.csv"))
+
+tidy_reviews <- reviews %>% 
+  select(company, summary) %>% 
+  unnest_tokens(word, summary)
+
+tidy_reviews
+```
+
+---
+
+Calculamos la frecuencia de cada palabra absoluta (`n`) y el total de las palabras para cada compañía (`total`)
+
+```{r eval=FALSE, echo=TRUE}
+reviews_words <- tidy_reviews %>%
+  count(company, word, sort = TRUE)
+
+total_words <- reviews_words %>% 
+  group_by(company) %>% 
+  summarize(total = sum(n))
+
+reviews_words <- left_join(reviews_words, total_words)
+
+reviews_words
+```
+
+---
+
+```{r echo=FALSE}
+reviews_words <- tidy_reviews %>%
+  count(company, word, sort = TRUE)
+
+total_words <- reviews_words %>% 
+  group_by(company) %>% 
+  summarize(total = sum(n))
+
+reviews_words <- left_join(reviews_words, total_words)
+
+reviews_words
+```
+
+---
+
+Visualizamos los histogramas de frecuencia de palabras para cada compañia:
+
+```{r eval=FALSE, echo=TRUE}
+ggplot(reviews_words, aes(n/total, fill = company)) +
+  geom_histogram(show.legend = FALSE) +
+  xlim(NA, 0.0009) +
+  facet_wrap(~company, ncol = 2, scales = "free_y")
+```
+---
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(reviews_words, aes(n/total, fill = company)) +
+  geom_histogram(show.legend = FALSE) +
+  xlim(NA, 0.0009) +
+  facet_wrap(~company, ncol = 2, scales = "free_y")
+```
+
+## Ley de Zipf
+
+La lye de Zipf establece que la frecuencia de aparición de una palabra es inversamente propocional a su orden en la lista de frecuencias
+
+```{r eval=FALSE, echo=TRUE}
+freq_by_rank <- reviews_words %>% 
+  group_by(company) %>% 
+  mutate(rank = row_number(), 
+         `term frequency` = n/total) %>%
+  ungroup()
+
+freq_by_rank
+```
+
+---
+
+```{r echo=FALSE}
+freq_by_rank <- reviews_words %>% 
+  group_by(company) %>% 
+  mutate(rank = row_number(), 
+         `term frequency` = n/total) %>%
+  ungroup()
+
+freq_by_rank
+```
+
+---
+
+Visualizamos el resultado
+
+```{r echo=FALSE}
+freq_by_rank %>% 
+  ggplot(aes(rank, `term frequency`, color = company)) + 
+  geom_line(size = 1.1, alpha = 0.8, show.legend = FALSE) + 
+  scale_x_log10() +
+  scale_y_log10()
+```
+
+---
+
+Podemos calcular el resultado teórico, y contrastar como se aproxima al resultado experimental
+
+```{r echo=TRUE}
+rank_subset <- freq_by_rank %>% 
+  filter(rank < 500,
+         rank > 10)
+
+lm(log10(`term frequency`) ~ log10(rank), 
+                             data = rank_subset)
+```
+
+---
+
+La línea de puntos representa como debería variar la frecuencia de palabras si se cumpliera perfectamente la ley de Zipf
+
+```{r eval=FALSE, echo=TRUE}
+freq_by_rank %>% 
+  ggplot(aes(rank, `term frequency`, color = company)) + 
+  geom_abline(intercept = -0.56, slope = -1.1, 
+              color = "gray50", linetype = 2) +
+  geom_line(size = 1.1, alpha = 0.8, 
+            show.legend = FALSE) + 
+  scale_x_log10() +
+  scale_y_log10()
+```
+
+---
+
+```{r echo=FALSE}
+freq_by_rank %>% 
+  ggplot(aes(rank, `term frequency`, color = company)) + 
+  geom_abline(intercept = -0.56, slope = -1.1, 
+              color = "gray50", linetype = 2) +
+  geom_line(size = 1.1, alpha = 0.8, show.legend = FALSE) + 
+  scale_x_log10() +
+  scale_y_log10()
+```
+
+## Ejemplo práctico
+
+Entendido como se distribuyen las palabras por frecuencia, vamos a ver con con **tf-idf** somos capaces de ajustar esa frecuencia para cada documento. De esta manera reducimos la importancia de palabras frecuentes que aparecen en muchos documentos.
+
+---
+
+Quitamos `facebook` y `netflix` dado que tienen muy pocas revisiones comparadas con el resto.
+
+```{r eval=FALSE, echo=TRUE}
+reviews_tf_idf <- reviews_words %>%
+  filter(company != 'facebook', company != 'netflix') %>%
+  bind_tf_idf(word, company, n)
+
+reviews_tf_idf
+```
+```{r echo=FALSE}
+reviews_tf_idf <- reviews_words %>%
+  filter(company != 'facebook', company != 'netflix') %>%
+  bind_tf_idf(word, company, n)
+
+print(reviews_tf_idf, n=6)
+```
+---
+
+El valor de **idf** y, en consecuencia, *tf-idf** es cero en palabras que son extremadamente comunes. Esto es así porque son palabras que aparecen en las revisiones de todas las compañias. 
+Dependiendo de en cuantas compañías aparece esa palabras tendrá un valor distinto. 
+
+El valor máximo sería que aparecería en una sola compañia. 
+
+---
+
+```{r echo=TRUE}
+reviews_tf_idf %>%
+  select(-total) %>%
+  arrange(desc(tf_idf))
+```
+
+---
+
+Visualizamos las palabras para cada compañia que tiene mayor valor **tf-idf** y que representan las temáticas que son características revisiones de cada compañia.
+
+```{r eval=FALSE, echo=TRUE}
+reviews_tf_idf %>%
+  group_by(company) %>%
+  slice_max(tf_idf, n = 15) %>%
+  ungroup() %>%
+  ggplot(aes(tf_idf, reorder_within(word, tf_idf, company), fill = company)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~company, ncol = 2, scales = "free") +
+  scale_y_reordered() +
+  labs(x = "tf-idf", y = NULL)
+```
+
+---
+
+```{r echo=FALSE}
+reviews_tf_idf %>%
+  group_by(company) %>%
+  slice_max(tf_idf, n = 15) %>%
+  ungroup() %>%
+  ggplot(aes(tf_idf, reorder_within(word, tf_idf, company), fill = company)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~company, ncol = 2, scales = "free") +
+  scale_y_reordered() +
+  labs(x = "tf-idf", y = NULL)
+```
+
+## A practicar
+
+**Ejercicio**. Repetir los análisis con las columnas `pros` y `cons`.

@@ -1,0 +1,4 @@
+"0","nrc_joy <- get_sentiments(""nrc"") %>% "
+"0","  filter(sentiment == ""joy"")"
+"0",""
+"0","nrc_joy"
