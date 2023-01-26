@@ -211,7 +211,7 @@ print(reviews_tf_idf, n=6)
 ```
 ---
 
-El valor de **idf** y, en consecuencia, *tf-idf** es cero en palabras que son extremadamente comunes. Esto es así porque son palabras que aparecen en las revisiones de todas las compañias. 
+El valor de **idf** y, en consecuencia, **tf-idf** es cero en palabras que son extremadamente comunes. Esto es así porque son palabras que aparecen en las revisiones de todas las compañias. 
 Dependiendo de en cuantas compañías aparece esa palabras tendrá un valor distinto. 
 
 El valor máximo sería que aparecería en una sola compañia. 
